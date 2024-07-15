@@ -135,6 +135,7 @@ runs:
         >&0 docker push ${{ inputs.repository }}/${IMAGE_NAME}:${COMMIT_TAG} && echo "Pushed"
         echo "::endgroup::"
         echo "${{ inputs.repository }}/${IMAGE_NAME}:${COMMIT_TAG}" >> "$GITHUB_OUTPUT"
+        docker images --digests "${{ inputs.repository }}/${IMAGE_NAME}:${COMMIT_TAG}" --format '{{.Digest}}' | sed "s/sha256://g" >> "$GITHUB_OUTPUT"
 
         if [ -z "${DOCKER_IO_TOKEN}" ]; then
           echo "::notice::NOT pushing the Docker image to docker.io ... Provide 'docker_io_token' if needed."
