@@ -95,10 +95,9 @@ runs:
         # https://docs.docker.com/develop/develop-images/build_enhancements/
         # https://docs.docker.com/engine/reference/commandline/build/#specifying-external-cache-sources
 
+        set -x
         podman build \
           --file ${{ inputs.dockerfile }} \
-          --build-arg BUILD_DATE=${BUILD_DATE} \
-          --build-arg GITHUB_SHA=${GITHUB_SHA} \
           --build-arg ${{ inputs.build_arg }} \
           --tag ${{ inputs.repository }}/${IMAGE_NAME}:${COMMIT_TAG} \
           --label org.label-schema.build-date=${BUILD_DATE} \
@@ -108,6 +107,7 @@ runs:
           --label org.opencontainers.image.source=${GITHUB_URL} \
           --label org.opencontainers.image.revision=${GITHUB_SHA} \
           ${{ inputs.context }}
+        set -x
 
         echo "::endgroup::"
 
