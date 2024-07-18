@@ -96,7 +96,9 @@ runs:
         # https://docs.docker.com/engine/reference/commandline/build/#specifying-external-cache-sources
 
         set -x
-        podman build \
+        podman manifest create ${{ inputs.repository }}/${IMAGE_NAME}:${COMMIT_TAG}
+        podman build --platform linux/amd64,linux/arm64 \
+          --manifest ${{ inputs.repository }}/${IMAGE_NAME}:${COMMIT_TAG}\
           --file ${{ inputs.dockerfile }} \
           --build-arg ${{ inputs.build_arg }} \
           --tag ${{ inputs.repository }}/${IMAGE_NAME}:${COMMIT_TAG} \
@@ -123,7 +125,7 @@ runs:
         echo "::endgroup::"
 
         echo "::group::Pushing the container image to ${{ inputs.repository }} ..."
-        >&0 podman push ${{ inputs.repository }}/${IMAGE_NAME}:${COMMIT_TAG} && echo "Pushed"
+        >&0 podman manifest push ${{ inputs.repository }}/${IMAGE_NAME}:${COMMIT_TAG} && echo "Pushed"
         echo "::endgroup::"
         echo "container_image=${{ inputs.repository }}/${IMAGE_NAME}:${COMMIT_TAG}" >> "$GITHUB_OUTPUT"
-        echo "container_digest=`podman images --digests "${{ inputs.repository }}/${IMAGE_NAME}:${COMMIT_TAG}" --format '{{.Digest}}' | sed "s/sha256://g"`" >> "$GITHUB_OUTPUT"
+        echo "container_digest=`podman manifest inspect "${{ inputs.repository }}/${IMAGE_NAME}:${COMMIT_TAG}" | jq -r '.manifests[].digest' | sed "s/sha256://g"`" >> "$GITHUB_OUTPUT"
