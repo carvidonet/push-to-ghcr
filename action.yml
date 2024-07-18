@@ -115,6 +115,6 @@ runs:
         echo "::group::Pushing the container image to ${{ inputs.repository }} ..."
         >&0 docker push ${{ inputs.repository }}/${IMAGE_NAME}:${COMMIT_TAG} && echo "Pushed"
         echo "::endgroup::"
-        echo "container_image=${{ inputs.repository }}/${IMAGE_NAME}:${COMMIT_TAG}" >> "$GITHUB_OUTPUT"
-        echo "container_digest=`docker buildx imagetools inspect "${{ inputs.repository }}/${IMAGE_NAME}:${COMMIT_TAG}" | grep Digest | awk '{print $2}' | sed "s/sha256://g"`" >> "$GITHUB_OUTPUT"
+        echo "containerimage=${{ inputs.repository }}/${IMAGE_NAME}:${COMMIT_TAG}" >> "$GITHUB_OUTPUT"
+        echo "digest=`docker buildx imagetools inspect "${{ inputs.repository }}/${IMAGE_NAME}:${COMMIT_TAG}" | grep Digest | awk '{print $2}' | sed "s/sha256://g"`" >> "$GITHUB_OUTPUT"
         docker buildx stop mybuilder
