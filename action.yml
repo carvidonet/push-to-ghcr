@@ -63,6 +63,7 @@ runs:
         IMAGE_TAG: ${{ inputs.image_tag }}
 
       run: |
+        alias docker='podman '
         echo "Using $(docker -v)"
 
         echo "::group::Logging into the GitHub Container registry (ghcr.io) ..."
