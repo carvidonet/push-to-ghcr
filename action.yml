@@ -108,19 +108,7 @@ runs:
           --label org.opencontainers.image.source=${GITHUB_URL} \
           --label org.opencontainers.image.revision=${GITHUB_SHA} \
           ${{ inputs.context }}
-          docker buildx stop mybuilder
         set -x
-
-        echo "::endgroup::"
-
-        echo "::group::Inspecting the image ..."
-        docker images
-
-        echo "Labels:"
-        docker image inspect ${{ inputs.repository }}/${IMAGE_NAME}:${COMMIT_TAG} | jq '.[].Config.Labels'
-
-        echo "Env variables:"
-        docker image inspect ${{ inputs.repository }}/${IMAGE_NAME}:${COMMIT_TAG} | jq '.[].Config.Env'
 
         echo "::endgroup::"
 
@@ -128,4 +116,5 @@ runs:
         >&0 docker push ${{ inputs.repository }}/${IMAGE_NAME}:${COMMIT_TAG} && echo "Pushed"
         echo "::endgroup::"
         echo "container_image=${{ inputs.repository }}/${IMAGE_NAME}:${COMMIT_TAG}" >> "$GITHUB_OUTPUT"
-        echo "container_digest=`docker manifest inspect "${{ inputs.repository }}/${IMAGE_NAME}:${COMMIT_TAG}" | jq -r '.manifests[].digest' | sed "s/sha256://g"`" >> "$GITHUB_OUTPUT"
+        echo "container_digest=`docker buildx imagetools inspect "${{ inputs.repository }}/${IMAGE_NAME}:${COMMIT_TAG}" | grep Digest | awk '{print $2}' | sed "s/sha256://g"`" >> "$GITHUB_OUTPUT"
+        docker buildx stop mybuilder
