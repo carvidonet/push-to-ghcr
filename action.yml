@@ -26,7 +26,7 @@ inputs:
     default: "."
 
   repository:
-    description: "Docker repository to push an image to, defaults to ghcr.io"
+    description: "Container repository to push an image to, defaults to ghcr.io"
     required: true
     default: "ghcr.io"
 
@@ -39,7 +39,7 @@ inputs:
     required: false
   
   image_tag:
-    description: Image tag, e.g. latest. Will overwrite the tag latest tag on a push, and have no effect on a release.
+    description: Container image tag, e.g. latest. Will overwrite the tag latest tag on a push, and have no effect on a release.
     required: false
 
   # https://docs.docker.com/build/guide/build-args/
@@ -63,11 +63,10 @@ runs:
         IMAGE_TAG: ${{ inputs.image_tag }}
 
       run: |
-        alias docker='podman '
-        echo "Using $(docker -v)"
+        echo "Using $(podman -v)"
 
         echo "::group::Logging into the GitHub Container registry (ghcr.io) ..."
-        echo "${GITHUB_TOKEN}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+        echo "${GITHUB_TOKEN}" | podman login ghcr.io -u "${{ github.actor }}" --password-stdin
         echo "::endgroup::"
 
         echo "::group::Set commit tag and image name"
@@ -91,12 +90,12 @@ runs:
         export BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
         export GITHUB_URL=https://github.com/${{ github.repository }}
 
-        echo "::group::Building the Docker image: ${{ inputs.repository }}/${IMAGE_NAME}:${COMMIT_TAG} from ${{ inputs.dockerfile }} in ${{ inputs.context }} context ..."
+        echo "::group::Building the podman image: ${{ inputs.repository }}/${IMAGE_NAME}:${COMMIT_TAG} from ${{ inputs.dockerfile }} in ${{ inputs.context }} context ..."
 
         # https://docs.docker.com/develop/develop-images/build_enhancements/
         # https://docs.docker.com/engine/reference/commandline/build/#specifying-external-cache-sources
         set -x
-        >&0 docker build \
+        >&0 podman build \
           --file ${{ inputs.dockerfile }} \
           --cache-from ${{ inputs.repository }}/${IMAGE_NAME}:latest \
           --build-arg BUILDKIT_INLINE_CACHE=1 \
@@ -122,33 +121,33 @@ runs:
         echo "::endgroup::"
 
         echo "::group::Inspecting the image ..."
-        docker images
+        podman images
 
         echo "Labels:"
-        docker image inspect ${{ inputs.repository }}/${IMAGE_NAME}:${COMMIT_TAG} | jq '.[].Config.Labels'
+        podman image inspect ${{ inputs.repository }}/${IMAGE_NAME}:${COMMIT_TAG} | jq '.[].Config.Labels'
 
         echo "Env variables:"
-        docker image inspect ${{ inputs.repository }}/${IMAGE_NAME}:${COMMIT_TAG} | jq '.[].Config.Env'
+        podman image inspect ${{ inputs.repository }}/${IMAGE_NAME}:${COMMIT_TAG} | jq '.[].Config.Env'
 
         echo "::endgroup::"
 
-        echo "::group::Pushing the Docker image to ${{ inputs.repository }} ..."
-        >&0 docker push ${{ inputs.repository }}/${IMAGE_NAME}:${COMMIT_TAG} && echo "Pushed"
+        echo "::group::Pushing the container image to ${{ inputs.repository }} ..."
+        >&0 podman push ${{ inputs.repository }}/${IMAGE_NAME}:${COMMIT_TAG} && echo "Pushed"
         echo "::endgroup::"
         echo "container_image=${{ inputs.repository }}/${IMAGE_NAME}:${COMMIT_TAG}" >> "$GITHUB_OUTPUT"
-        echo "container_digest=`docker images --digests "${{ inputs.repository }}/${IMAGE_NAME}:${COMMIT_TAG}" --format '{{.Digest}}' | sed "s/sha256://g"`" >> "$GITHUB_OUTPUT"
+        echo "container_digest=`podman images --digests "${{ inputs.repository }}/${IMAGE_NAME}:${COMMIT_TAG}" --format '{{.Digest}}' | sed "s/sha256://g"`" >> "$GITHUB_OUTPUT"
 
         if [ -z "${DOCKER_IO_TOKEN}" ]; then
-          echo "::notice::NOT pushing the Docker image to docker.io ... Provide 'docker_io_token' if needed."
+          echo "::notice::NOT pushing the podman image to docker.io ... Provide 'docker_io_token' if needed."
         else
           if [ -z ${DOCKER_IO_USER} ]; then
             export DOCKER_IO_USER="${{ github.actor }}"
           fi
 
-          echo "::group::Pushing the Docker image to docker.io as ${DOCKER_IO_USER}..."
-          echo "${DOCKER_IO_TOKEN}" | docker login docker.io -u "${DOCKER_IO_USER}" --password-stdin
+          echo "::group::Pushing the container image to docker.io as ${DOCKER_IO_USER}..."
+          echo "${DOCKER_IO_TOKEN}" | podman login docker.io -u "${DOCKER_IO_USER}" --password-stdin
 
-          >&0 docker push docker.io/${IMAGE_NAME}:${COMMIT_TAG} && echo "Pushed"
+          >&0 podman push docker.io/${IMAGE_NAME}:${COMMIT_TAG} && echo "Pushed"
 
           echo "::endgroup::"
         fi
