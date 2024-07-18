@@ -63,6 +63,7 @@ runs:
         IMAGE_TAG: ${{ inputs.image_tag }}
 
       run: |
+        apt-get -y install podman
         echo "Using $(podman -v)"
 
         echo "::group::Logging into the GitHub Container registry (ghcr.io) ..."
